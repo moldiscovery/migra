@@ -9,6 +9,10 @@ These two MUST be installed for the script to correctly work.
 * git
 * [hub](hub)
 
+## Installation
+
+Run `pipenv install` to install requirements.
+
 ## Usage
 
 TODO

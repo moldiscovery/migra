@@ -1,8 +1,11 @@
 import subprocess
 from typing import List
 import re
+import asyncio
 
 import click
+
+from processor import process
 
 
 GIT_URL_REGEX = re.compile(
@@ -36,6 +39,11 @@ def migra(owner: str, file: click.File, urls: List[str]):
     # Filter out invalid URLs and join file and args URLs
     urls = list(filter(validate_git_url, urls))
     urls += list(filter(validate_git_url, file.read().splitlines()))
+    # Removes duplicates
+    urls = list(set(urls))
+
+    # Starts processing repositories
+    asyncio.run(process(owner, urls))
 
 
 if __name__ == "__main__":
