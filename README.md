@@ -1,6 +1,6 @@
 # Migra
 
-Bash script to migrate repositories from BitBucket to GitHub.
+Python script to migrate git repositories to GitHub.
 
 ## Requirements
 
