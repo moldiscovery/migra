@@ -7,7 +7,7 @@ Python script to migrate git repositories to GitHub.
 These two MUST be installed to run the script.
 
 * git
-* [hub](hub)
+* [hub][hub]
 
 ## Installation
 
@@ -19,7 +19,7 @@ After installing the requirements enter the virtual env with `pipenv shell`.
 
 Before running the script make sure you configured `hub` with your GitHub credentials by setting `GITHUB_USER` and `GITHUB_PASSWORD` environment variables, otherwise you'll get prompted for them.
 
-See [hub configuration](hub_config) for more info.
+See [hub configuration][hub_config] for more info.
 
 To run the script:
 
