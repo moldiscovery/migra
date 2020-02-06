@@ -1,15 +1,25 @@
+from typing import Dict
 import asyncio
-import re
 import os
-
-REPO_FOLDER_REGEX = re.compile("'(.*)'")
 
 
 async def worker(repo_owner: str, q: asyncio.Queue):
-    repo_url: str = await q.get()
-    print(f"Started processing {repo_url}")
+    (repo_name, repo_url) = await q.get()
+    print(f"Started processing {repo_name}")
 
     try:
+        # Check if repository with same name already exists on GitHub
+        proc: asyncio.subprocess.Process = await asyncio.create_subprocess_shell(
+            f"git ls-remote --exit-code {repo_url}",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await proc.wait()
+        if proc.returncode == 0:
+            raise Exception(
+                f"Stopped processing {repo_name}: repo with same name already exists"
+            )
+
         # Clones repo
         proc: asyncio.subprocess.Process = await asyncio.create_subprocess_shell(
             f"git clone --mirror {repo_url}",
@@ -19,12 +29,7 @@ async def worker(repo_owner: str, q: asyncio.Queue):
 
         (_, stderr) = await proc.communicate()
 
-        match: re.Match = REPO_FOLDER_REGEX.search(stderr.decode())
-        if match is None:
-            raise Exception("Couldn't parse repo folder")
-
-        repo_folder: str = match.group(1)
-        repo_name: str = repo_folder[:-4]
+        repo_folder: str = f"{repo_name}.git"
 
         # Removes existing remote
         proc: asyncio.subprocess.Process = await asyncio.create_subprocess_shell(
@@ -69,15 +74,15 @@ async def worker(repo_owner: str, q: asyncio.Queue):
 
 
 # Sets up and starts processing of git repositories
-async def process(repo_owner: str, urls: str):
+async def process(repo_owner: str, repos: Dict[str, str]):
     # Create a processing queue
     q = asyncio.Queue()
-    for url in urls:
-        q.put_nowait(url)
+    for name, url in repos.items():
+        q.put_nowait((name, url))
 
     # Creates a task for each repo
     tasks: List[asyncio.Task] = []
-    for _ in urls:
+    for _ in repos:
         task = asyncio.create_task(worker(repo_owner, q))
         tasks.append(task)
 

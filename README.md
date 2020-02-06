@@ -53,9 +53,7 @@ The newly created repositories on GitHub will all be **private**.
 
 ## WARNING
 
-All repositories **MUST** have different names, we don't know what happens in case there are two or more repositories with equal name.
-
-Existing repositories on GitHub might be **OVERWRITTEN** if they have identical names to repositories being migrated.
+All repositories **MUST** have different names, in case there are two or more repositories with equal name they are skipped.
 
 
 [hub]: https://github.com/github/hub

@@ -1,5 +1,5 @@
 import subprocess
-from typing import List
+from typing import List, Dict
 import re
 import asyncio
 
@@ -11,6 +11,7 @@ from processor import process
 GIT_URL_REGEX = re.compile(
     "((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?"
 )
+REPO_NAME_REGEX = re.compile("/(.*)\.git/?$")
 
 
 def check_if_installed(executable: str) -> bool:
@@ -42,8 +43,30 @@ def migra(owner: str, file: click.File, urls: List[str]):
     # Removes duplicates
     urls = list(set(urls))
 
+    names: Dict[str, List[str]] = {}
+    # Assumes a match is always found
+    for url in urls:
+        match = REPO_NAME_REGEX.search(url)
+        name = match.group(1)
+        if name in names:
+            names[name].append(url)
+        else:
+            names[name] = [url]
+
+    # Removes repositories with same name
+    duplicates: Dict[str, List[str]] = {k: v for k, v in names.items() if len(v) > 1}
+    repos: Dict[str, str] = {k: v[0] for k, v in names.items() if len(v) == 1}
+
+    # Warn users that duplicates won't be processed
+    if len(duplicates) > 0:
+        print("Skipping repositories with same name:")
+        for name, repo_urls in duplicates.items():
+            print(f"{name}")
+            for url in repo_urls:
+                print(f"    {url}")
+
     # Starts processing repositories
-    asyncio.run(process(owner, urls))
+    asyncio.run(process(owner, repos))
 
 
 if __name__ == "__main__":
