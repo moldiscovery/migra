@@ -49,6 +49,14 @@ git@bitbucket.org:another_org/another_repo1.git
 git@bitbucket.org:another_org/another_repo2.git
 ```
 
+If you want to migrate submodules too you need to specify the origin URL from which to migrate:
+
+```
+python migra.py --owner <new_owner> --submodule_from bitbucket.org:<user_or_organization> <git_urls>
+```
+
+This will change the URLs of any submodule that contains the `bitbucket.org:<user_or_organization>` to `github.com:<new_owner>`. This is done for all branches of all repositories, a new commit will be automatically created with the changes.
+
 The newly created repositories on GitHub will all be **private**.
 
 ## WARNING

@@ -31,8 +31,11 @@ def validate_git_url(url: str) -> bool:
 @click.command()
 @click.option("-o", "--owner", "owner", required=True, type=str)
 @click.option("-f", "--file", "file", required=False, type=click.File("r"))
+@click.option("-s", "--submodule-from", "submodule_from", required=False, type=str)
 @click.argument("urls", nargs=-1)
-def migra(owner: str, file: click.File, urls: List[str]):
+def migra(
+    owner: str, file: click.File, urls: List[str], submodule_from: str,
+):
 
     if not check_if_installed("git") or not check_if_installed("hub"):
         return
@@ -66,7 +69,7 @@ def migra(owner: str, file: click.File, urls: List[str]):
                 print(f"    {url}")
 
     # Starts processing repositories
-    asyncio.run(process(owner, repos))
+    asyncio.run(process(owner, repos, submodule_from))
 
 
 if __name__ == "__main__":
