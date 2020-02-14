@@ -1,9 +1,10 @@
 from typing import Dict
 import asyncio
 import os
+import re
 
 
-async def worker(repo_owner: str, submodule_from: str, q: asyncio.Queue):
+async def worker(repo_owner: str, submodule_regex: re.Pattern, q: asyncio.Queue):
     """
     Clones repository locally, if necessary updates submodules urls to new
     remote, creates new remote repository and pushes to it, when done deletes
@@ -26,7 +27,7 @@ async def worker(repo_owner: str, submodule_from: str, q: asyncio.Queue):
             )
 
         # If we don't need to update submodules we mirror the repository so it's faster
-        mirror: str = "--mirror" if not submodule_from else ""
+        mirror: str = "--mirror" if not submodule_regex else ""
 
         # Clones repo
         proc: asyncio.subprocess.Process = await asyncio.create_subprocess_shell(
@@ -72,11 +73,11 @@ async def worker(repo_owner: str, submodule_from: str, q: asyncio.Queue):
 
                 # Replaces submodules URLs
                 with open(f"{repo_folder}/.gitmodules", "r+") as f:
-                    text = f.read()
-                    # Nothing to replace here, skip this branch
-                    if submodule_from not in text:
-                        continue
-                    text = text.replace(submodule_from, f"github.com:{repo_owner}")
+                    text = ""
+                    for line in f.readlines():
+                        text += submodule_regex.sub(
+                            fr"github.com:{repo_owner}/\2.git", line
+                        )
                     f.seek(0)
                     f.write(text)
                     f.truncate()
@@ -139,10 +140,15 @@ async def process(repo_owner: str, repos: Dict[str, str], submodule_from: str):
     for name, url in repos.items():
         q.put_nowait((name, url))
 
+    submodule_regex: re.Pattern = None
+    if submodule_from:
+        submodule_from = re.escape(submodule_from)
+        submodule_regex = re.compile(f"({submodule_from})\/(.*?)(\.git|$)")
+
     # Creates a task for each repo
     tasks: List[asyncio.Task] = []
     for _ in repos:
-        task = asyncio.create_task(worker(repo_owner, submodule_from, q))
+        task = asyncio.create_task(worker(repo_owner, submodule_regex, q))
         tasks.append(task)
 
     # Waits for the whole queue to finish processing
