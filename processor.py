@@ -49,12 +49,12 @@ async def worker(repo_owner: str, submodule_from: str, q: asyncio.Queue):
             (stdout, _) = await proc.communicate()
 
             # Get all remote branches of current repo
-            branches = []
+            branches = set()
             for line in stdout.decode().splitlines():
                 if "origin/HEAD" in line:
-                    continue
+                    line: str = line.split("->")[1]
                 branch = line.replace("origin/", "").strip()
-                branches.append(branch)
+                branches.add(branch)
 
             for branch in branches:
                 # Checkout branch
@@ -88,6 +88,7 @@ async def worker(repo_owner: str, submodule_from: str, q: asyncio.Queue):
                     stderr=asyncio.subprocess.DEVNULL,
                     cwd=repo_folder,
                 )
+                await proc.wait()
 
         # Removes existing remote
         proc: asyncio.subprocess.Process = await asyncio.create_subprocess_shell(
