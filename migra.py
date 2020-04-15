@@ -42,7 +42,8 @@ def migra(
 
     # Filter out invalid URLs and join file and args URLs
     urls = list(filter(validate_git_url, urls))
-    urls += list(filter(validate_git_url, file.read().splitlines()))
+    if file:
+        urls += list(filter(validate_git_url, file.read().splitlines()))
     # Removes duplicates
     urls = list(set(urls))
 
